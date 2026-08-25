@@ -1,0 +1,129 @@
+class ATSAnalyzer {
+  analyze(text) {
+    const issues = [];
+    const suggestions = [];
+    let score = 70;
+    let details = {};
+
+    const wordCount = text.split(/\s+/).length;
+    if (wordCount < 200) {
+      issues.push('📄 Tu CV es demasiado corto (menos de 200 palabras).');
+      suggestions.push('📝 Amplía tu experiencia laboral con más detalles y logros.');
+      score -= 10;
+    } else if (wordCount > 800) {
+      issues.push('📄 Tu CV es muy extenso.');
+      suggestions.push('✂️ Reduce tu CV a 1-2 páginas.');
+      score -= 5;
+    } else {
+      suggestions.push('✅ La extensión de tu CV es adecuada.');
+      score += 5;
+    }
+
+    const sections = ['experiencia', 'educación', 'habilidades', 'formación', 'trabajo', 'estudios'];
+    const hasExperience = sections.some(s => text.toLowerCase().includes(s));
+    
+    if (!hasExperience) {
+      issues.push('⚠️ No se detecta una sección clara de "Experiencia Laboral".');
+      suggestions.push('📋 Añade una sección específica de "Experiencia Laboral".');
+      score -= 15;
+    } else {
+      score += 5;
+    }
+
+    const hardSkills = ['python', 'java', 'javascript', 'sql', 'html', 'css', 'excel', 'power bi', 'tableau', 'aws', 'cloud', 'machine learning', 'react', 'angular', 'vue', 'node', 'docker', 'kubernetes', 'git'];
+    const foundHardSkills = hardSkills.filter(skill => text.toLowerCase().includes(skill));
+    
+    if (foundHardSkills.length < 3) {
+      issues.push('🔧 Pocas habilidades técnicas identificadas.');
+      suggestions.push('💻 Incluye más habilidades técnicas específicas.');
+      score -= 10;
+    } else {
+      suggestions.push(`🛠️ Buen número de hard skills detectadas (${foundHardSkills.length}).`);
+      score += 5;
+    }
+
+    const softSkills = ['liderazgo', 'comunicación', 'trabajo en equipo', 'resolución de problemas', 'gestión del tiempo', 'organización', 'adaptabilidad', 'creatividad'];
+    const foundSoftSkills = softSkills.filter(skill => text.toLowerCase().includes(skill));
+    
+    if (foundSoftSkills.length < 2) {
+      issues.push('🧠 Pocas habilidades blandas mencionadas.');
+      suggestions.push('🤝 Añade habilidades blandas clave.');
+      score -= 8;
+    } else {
+      suggestions.push(`⭐ Buen nivel de soft skills (${foundSoftSkills.length} detectadas).`);
+    }
+
+    const hasNumbers = /\d+%|\d+\s*€|\d+\s*dólares|\d+\s*millones|\d+\s*miembros|\d+\s*clientes/.test(text);
+    if (!hasNumbers) {
+      issues.push('📊 Faltan logros cuantificables.');
+      suggestions.push('🎯 Cuantifica tus logros con números y porcentajes.');
+      score -= 12;
+    } else {
+      suggestions.push('📈 Buen uso de métricas y números.');
+      score += 8;
+    }
+
+    const hasEmail = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(text);
+    const hasPhone = /\+\d{1,3}\s?\d{9,11}|\d{9,11}/.test(text);
+    
+    if (!hasEmail) {
+      issues.push('📧 No se detecta email de contacto.');
+      suggestions.push('📬 Incluye tu email en la cabecera del CV.');
+      score -= 5;
+    }
+    if (!hasPhone) {
+      issues.push('📱 No se detecta número de teléfono.');
+      suggestions.push('📞 Incluye tu teléfono con prefijo internacional.');
+      score -= 5;
+    }
+
+    const keywords = ['responsable', 'logros', 'resultados', 'implementé', 'desarrollé', 'dirigí', 'gestioné', 'optimicé', 'mejoré', 'aumenté', 'reduje'];
+    const foundKeywords = keywords.filter(kw => text.toLowerCase().includes(kw));
+    
+    if (foundKeywords.length < 5) {
+      issues.push('🔑 Pocas palabras clave de acción.');
+      suggestions.push('⚡ Usa verbos de acción como "Implementé", "Optimicé", "Lideré".');
+      score -= 8;
+    } else {
+      suggestions.push(`💪 Buen uso de verbos de acción (${foundKeywords.length} detectados).`);
+      score += 5;
+    }
+
+    score = Math.max(0, Math.min(100, score));
+    const finalSuggestions = suggestions.filter((v, i, a) => a.indexOf(v) === i);
+    
+    details = {
+      wordCount,
+      hardSkills: foundHardSkills,
+      softSkills: foundSoftSkills,
+      keywords: foundKeywords,
+      sections: {
+        experience: hasExperience
+      }
+    };
+
+    return {
+      score,
+      issues,
+      suggestions: finalSuggestions,
+      details
+    };
+  }
+
+  generateOptimizedText(originalText, suggestions) {
+    let optimized = `=== CV OPTIMIZADO - RECOMENDACIONES ATS ===\n\n`;
+    optimized += `📊 Puntuación ATS mejorada\n`;
+    optimized += `📝 Sigue estas recomendaciones para optimizar tu CV:\n\n`;
+    
+    suggestions.forEach((s, i) => {
+      optimized += `${i + 1}. ${s}\n`;
+    });
+    
+    optimized += `\n\n--- TU CV ORIGINAL CON MEJORAS ---\n\n`;
+    optimized += originalText;
+    
+    return optimized;
+  }
+}
+
+module.exports = new ATSAnalyzer(); 
