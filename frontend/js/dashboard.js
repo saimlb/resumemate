@@ -1,3 +1,6 @@
+// Configuración de Paddle
+let paddleInitialized = false;
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!isAuthenticated()) {
         redirectToLogin();
@@ -30,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Botones de compra con Paddle
     document.querySelectorAll('.purchase-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const plan = btn.closest('.purchase-card').dataset.plan;
@@ -41,6 +45,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         loadHistory();
     });
+
+    // Verificar estado de pago al cargar la página
+    checkPaymentStatus();
+
+    // Inicializar Paddle si el token está disponible
+    if (window.PADDLE_CLIENT_TOKEN && window.PADDLE_CLIENT_TOKEN !== '{{PADDLE_CLIENT_TOKEN}}') {
+        try {
+            Paddle.Environment.set('sandbox');
+            Paddle.Initialize({
+                token: window.PADDLE_CLIENT_TOKEN
+            });
+            paddleInitialized = true;
+            console.log('✅ Paddle inicializado correctamente');
+        } catch (error) {
+            console.error('❌ Error al inicializar Paddle:', error);
+        }
+    } else {
+        console.warn('⚠️ Token de Paddle no encontrado');
+    }
 });
 
 async function loadDashboard() {
@@ -108,30 +131,73 @@ async function loadStats() {
     }
 }
 
+// ============================================
+// FUNCIONES DE PAGO CON PADDLE
+// ============================================
+
 async function handlePurchase(plan) {
     try {
         const planNames = {
-            'pro': 'Pro (20 créditos por 19€)',
-            'premium': 'Premium (100 créditos por 59€)'
+            'pro': 'Plan Pro (20 créditos por 19€)',
+            'premium': 'Plan Premium (100 créditos por 59€)'
         };
 
-        showToast(`💳 Procesando pago simulado para el plan ${planNames[plan]}...`, 'info');
+        showToast(`🔄 Procesando pago con Paddle para ${planNames[plan]}...`, 'info');
         
-        const result = await purchaseCredits(plan);
-        showToast(result.message, 'success');
+        // Llamar al backend para crear el checkout de Paddle
+        const result = await apiCall('/payments/create-checkout', {
+            method: 'POST',
+            body: JSON.stringify({ plan })
+        });
         
-        const user = await getUserProfile();
-        document.getElementById('creditsCount').textContent = user.credits;
-        document.getElementById('buyCreditsModal').style.display = 'none';
-        await loadStats();
+        console.log('✅ Respuesta del backend:', result);
+        
+        if (result && result.url) {
+            // Redirigir al checkout de Paddle
+            showToast('🔀 Redirigiendo a Paddle...', 'info');
+            setTimeout(() => {
+                window.location.href = result.url;
+            }, 1000);
+        } else {
+            // Fallback: si el backend devuelve créditos directamente
+            showToast('✅ Créditos añadidos correctamente', 'success');
+            const user = await getUserProfile();
+            document.getElementById('creditsCount').textContent = user.credits;
+            document.getElementById('buyCreditsModal').style.display = 'none';
+            await loadStats();
+        }
     } catch (error) {
+        console.error('❌ Error en handlePurchase:', error);
         showToast(error.message || 'Error al procesar la compra.', 'error');
     }
 }
 
+// Función para verificar el estado del pago al volver
+function checkPaymentStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const paddleStatus = urlParams.get('paddle_status');
+    
+    if (paymentStatus === 'success' || paddleStatus === 'completed') {
+        showToast('✅ ¡Pago completado! Tus créditos han sido añadidos.', 'success');
+        setTimeout(async () => {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+            await loadDashboard();
+        }, 3000);
+    } else if (paymentStatus === 'canceled' || paddleStatus === 'canceled') {
+        showToast('❌ Pago cancelado. Puedes intentarlo nuevamente.', 'warning');
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+    }
+}
+
+// Actualizar créditos periódicamente (cada 30 segundos)
 setInterval(async () => {
     try {
         const user = await getUserProfile();
         document.getElementById('creditsCount').textContent = user.credits;
-    } catch (error) {}
+    } catch (error) {
+        // Ignorar errores en background
+    }
 }, 30000);
