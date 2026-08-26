@@ -1,7 +1,15 @@
-const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3000/api' 
-  : 'https://resumemate-xrhk.onrender.com/api';
-  
+// Configuración de API - DETECCIÓN AUTOMÁTICA
+let API_URL;
+
+// Detectar entorno automáticamente
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  API_URL = 'http://localhost:3000/api';
+} else {
+  API_URL = 'https://resumemate-xrhk.onrender.com/api';
+}
+
+console.log('🌐 API URL:', API_URL);
+
 function getToken() {
     return localStorage.getItem('token');
 }
@@ -61,7 +69,10 @@ async function apiCall(endpoint, options = {}) {
     }
 
     try {
-        const response = await fetch(`${API_URL}${endpoint}`, {
+        const url = `${API_URL}${endpoint}`;
+        console.log('📡 Llamando a:', url);
+        
+        const response = await fetch(url, {
             ...options,
             headers
         });
@@ -74,7 +85,8 @@ async function apiCall(endpoint, options = {}) {
         
         return data;
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('❌ API Error:', error);
+        showToast('Error de conexión: ' + error.message, 'error');
         throw error;
     }
 }

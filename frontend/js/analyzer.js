@@ -1,6 +1,13 @@
 let selectedFile = null;
 let analysisResult = null;
 
+// Detectar URL base automáticamente
+const BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:3000' 
+  : 'https://resumemate-xrhk.onrender.com';
+
+console.log('🌐 BASE_URL:', BASE_URL);
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!isAuthenticated()) {
         redirectToLogin();
@@ -85,7 +92,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         try {
             const token = getToken();
-            const response = await fetch(`${window.location.origin}${analysisResult.optimizedPath}`, {
+            const downloadUrl = `${BASE_URL}${analysisResult.optimizedPath}`;
+            console.log('📥 Descargando desde:', downloadUrl);
+            
+            const response = await fetch(downloadUrl, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -106,6 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.body.removeChild(a);
             showToast('¡CV optimizado descargado!', 'success');
         } catch (error) {
+            console.error('❌ Error al descargar:', error);
             showToast('Error al descargar: ' + error.message, 'error');
         }
     });
@@ -141,6 +152,7 @@ async function analyzeFile() {
     loadingOverlay.style.display = 'flex';
 
     try {
+        console.log('🔍 Analizando archivo...');
         const result = await analyzeResume(selectedFile);
         analysisResult = result;
         displayResults(result);
@@ -148,6 +160,7 @@ async function analyzeFile() {
         document.getElementById('creditsCount2').textContent = user.credits;
         showToast(`✅ Análisis completado! Puntuación: ${result.score}/100`, 'success');
     } catch (error) {
+        console.error('❌ Error al analizar:', error);
         showToast('Error al analizar el CV: ' + error.message, 'error');
         if (error.message.includes('créditos')) {
             showToast('⚠️ Créditos insuficientes. Por favor, compra más créditos.', 'warning');
