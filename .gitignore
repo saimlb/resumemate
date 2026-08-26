@@ -1,0 +1,26 @@
+# Variables de entorno
+.env
+.env.local
+.env.production
+
+# Dependencias
+node_modules/
+
+# Archivos de base de datos
+*.db
+*.sqlite
+
+# Archivos subidos y temporales
+uploads/
+output/
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
