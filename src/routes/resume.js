@@ -3,13 +3,13 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const db = require('../database');
+const pool = require('../database');
 const auth = require('../middleware/auth');
 const creditsCheck = require('../middleware/credits');
 const pdfProcessor = require('../services/pdfProcessor');
 const atsAnalyzer = require('../services/atsAnalyzer');
 
-// Configurar multer
+// Configurar multer para subida de archivos
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, '..', '..', 'uploads');
@@ -34,7 +34,7 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 5 * 1024 * 1024
+    fileSize: 5 * 1024 * 1024 // 5MB
   }
 });
 
@@ -48,75 +48,65 @@ router.post('/analyze', auth, creditsCheck, upload.single('resume'), async (req,
     const filePath = req.file.path;
     const originalName = req.file.originalname;
 
+    // Extraer texto del PDF
     const text = await pdfProcessor.extractText(filePath);
     
     if (!text || text.trim().length < 50) {
       fs.unlinkSync(filePath);
       return res.status(400).json({ 
-        error: 'El PDF parece no contener texto extraíble.' 
+        error: 'El PDF parece no contener texto extraíble. Asegúrate de que no sea un documento escaneado.' 
       });
     }
 
+    // Analizar con ATS
     const analysis = atsAnalyzer.analyze(text);
+    
+    // Generar PDF optimizado
     const optimizedText = atsAnalyzer.generateOptimizedText(text, analysis.suggestions);
     const optimizedPath = await pdfProcessor.createOptimizedPDF(filePath, optimizedText);
 
     const userId = req.user.id;
     
-    await new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE users SET credits = credits - 1 WHERE id = ?',
-        [userId],
-        (err) => {
-          if (err) reject(err);
-          else resolve();
-        }
-      );
-    });
+    // Reducir créditos
+    await pool.query('UPDATE users SET credits = credits - 1 WHERE id = $1', [userId]);
 
-    const result = await new Promise((resolve, reject) => {
-      db.run(
-        `INSERT INTO analyses (user_id, filename, original_name, score, issues, suggestions, optimized_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          userId,
-          req.file.filename,
-          originalName,
-          analysis.score,
-          JSON.stringify(analysis.issues),
-          JSON.stringify(analysis.suggestions),
-          optimizedPath
-        ],
-        function(err) {
-          if (err) reject(err);
-          else resolve({ id: this.lastID });
-        }
-      );
-    });
+    // Guardar análisis en PostgreSQL
+    const result = await pool.query(
+      `INSERT INTO analyses (user_id, filename, original_name, score, issues, suggestions, optimized_path)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [
+        userId,
+        req.file.filename,
+        originalName,
+        analysis.score,
+        JSON.stringify(analysis.issues),
+        JSON.stringify(analysis.suggestions),
+        optimizedPath
+      ]
+    );
 
-    const creditsInfo = await new Promise((resolve, reject) => {
-      db.get('SELECT credits FROM users WHERE id = ?', [userId], (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+    // Obtener créditos actualizados
+    const creditsResult = await pool.query('SELECT credits FROM users WHERE id = $1', [userId]);
+    const remainingCredits = creditsResult.rows[0].credits;
 
+    // Limpiar archivo subido
     fs.unlinkSync(filePath);
 
     res.json({
       success: true,
-      analysisId: result.id,
+      analysisId: result.rows[0].id,
       score: analysis.score,
       issues: analysis.issues,
       suggestions: analysis.suggestions,
       details: analysis.details,
       optimizedPath: `/download/${req.file.filename}`,
-      remainingCredits: creditsInfo.credits,
-      message: `✅ Análisis completado. Créditos restantes: ${creditsInfo.credits}`
+      remainingCredits: remainingCredits,
+      message: `✅ Análisis completado. Créditos restantes: ${remainingCredits}`
     });
 
   } catch (error) {
     console.error('Error en análisis:', error);
+    // Limpiar archivo si existe
     if (req.file && req.file.path) {
       try { fs.unlinkSync(req.file.path); } catch (e) {}
     }
@@ -141,18 +131,18 @@ router.get('/download/:filename', auth, (req, res) => {
   });
 });
 
-// Obtener historial
-router.get('/history', auth, (req, res) => {
-  db.all(
-    'SELECT id, original_name, score, created_at FROM analyses WHERE user_id = ? ORDER BY created_at DESC LIMIT 20',
-    [req.user.id],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error al obtener historial.' });
-      }
-      res.json(rows);
-    }
-  );
+// Obtener historial de análisis
+router.get('/history', auth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, original_name, score, created_at FROM analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT 20',
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error al obtener historial:', error);
+    res.status(500).json({ error: 'Error al obtener historial.' });
+  }
 });
 
-module.exports = router; 
+module.exports = router;

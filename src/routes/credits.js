@@ -1,20 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
+const pool = require('../database');
 const auth = require('../middleware/auth');
 
 // Obtener créditos del usuario
-router.get('/balance', auth, (req, res) => {
-  db.get('SELECT credits, plan FROM users WHERE id = ?', [req.user.id], (err, row) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error al obtener créditos.' });
+router.get('/balance', auth, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT credits, plan FROM users WHERE id = $1', [req.user.id]);
+    const user = result.rows[0];
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
     }
-    res.json({ credits: row.credits, plan: row.plan });
-  });
+    res.json({ credits: user.credits, plan: user.plan });
+  } catch (error) {
+    console.error('Error al obtener créditos:', error);
+    res.status(500).json({ error: 'Error al obtener créditos.' });
+  }
 });
 
 // Simular compra de créditos (pago simulado)
-router.post('/purchase', auth, (req, res) => {
+router.post('/purchase', auth, async (req, res) => {
   const { plan } = req.body;
   
   const plans = {
@@ -26,25 +31,25 @@ router.post('/purchase', auth, (req, res) => {
     return res.status(400).json({ error: 'Plan no válido.' });
   }
 
-  const newCredits = plans[plan].credits;
-  const price = plans[plan].price;
+  try {
+    const newCredits = plans[plan].credits;
+    const price = plans[plan].price;
 
-  db.run(
-    'UPDATE users SET credits = credits + ?, plan = ? WHERE id = ?',
-    [newCredits, plan, req.user.id],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Error al procesar la compra.' });
-      }
+    await pool.query(
+      'UPDATE users SET credits = credits + $1, plan = $2 WHERE id = $3',
+      [newCredits, plan, req.user.id]
+    );
 
-      res.json({
-        success: true,
-        message: `💰 SIMULACIÓN DE PAGO: Has adquirido ${newCredits} créditos por ${price}€ (plan ${plan}). ¡Pago simulado!`,
-        credits: newCredits,
-        plan: plan
-      });
-    }
-  );
+    res.json({
+      success: true,
+      message: `💰 SIMULACIÓN DE PAGO: Has adquirido ${newCredits} créditos por ${price}€ (plan ${plan}). ¡Pago simulado!`,
+      credits: newCredits,
+      plan: plan
+    });
+  } catch (error) {
+    console.error('Error al procesar compra:', error);
+    res.status(500).json({ error: 'Error al procesar la compra.' });
+  }
 });
 
-module.exports = router; 
+module.exports = router;
