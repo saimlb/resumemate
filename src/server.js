@@ -12,7 +12,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, '..', '..', 'frontend')));
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, '../frontend')));
+console.log('📁 Sirviendo frontend desde:', path.join(__dirname, '../frontend'));
 
 // Rutas
 const authRoutes = require('./routes/auth');
