@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         try {
             const token = getToken();
-            const response = await fetch(`http://localhost:3000${analysisResult.optimizedPath}`, {
+            const response = await fetch(`${window.location.origin}${analysisResult.optimizedPath}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
