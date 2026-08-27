@@ -43,9 +43,10 @@ router.post('/create-checkout', auth, async (req, res) => {
       return_url: `${process.env.APP_URL || 'https://resumemate-xrhk.onrender.com'}/dashboard?payment=success`,
     });
 
+    console.log('✅ Checkout creado:', checkout.url);
     res.json({ url: checkout.url });
   } catch (error) {
-    console.error('Error al crear checkout:', error);
+    console.error('❌ Error al crear checkout:', error);
     res.status(500).json({ error: 'Error al procesar el pago' });
   }
 });
@@ -55,8 +56,13 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   const signature = req.headers['paddle-signature'];
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
 
+  console.log('🔔 Webhook recibido');
+  console.log('📨 Signature:', signature);
+  console.log('🔑 Webhook Secret:', webhookSecret ? '✅ Presente' : '❌ No configurado');
+
   try {
     const event = await paddle.webhooks.unmarshal(req.body, signature, webhookSecret);
+    console.log('✅ Webhook verificado correctamente');
 
     // Manejar evento de pago completado
     if (event.type === 'transaction.completed') {
@@ -64,6 +70,8 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       const userId = transaction.custom_data?.userId;
       const credits = parseInt(transaction.custom_data?.credits || '0');
       const plan = transaction.custom_data?.plan;
+
+      console.log(`💰 Transacción completada: Usuario ${userId}, ${credits} créditos, plan ${plan}`);
 
       if (userId && credits > 0) {
         await pool.query(
@@ -76,7 +84,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
     res.json({ received: true });
   } catch (error) {
-    console.error('Error al verificar webhook:', error);
+    console.error('❌ Error al verificar webhook:', error);
     res.status(400).send('Webhook Error');
   }
 });
