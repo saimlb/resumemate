@@ -7,13 +7,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================
-// 1. WEBHOOK DE STRIPE (DEBE IR ANTES DE express.json)
+// 1. WEBHOOK DE PADDLE (DEBE IR ANTES DE express.json)
 // ============================================
-const paymentsRoutes = require('./routes/payments');
-app.use('/api/payments/webhook', paymentsRoutes);
+const paddlePaymentsRoutes = require('./routes/paddlePayments');
+app.use('/api/payments/webhook', paddlePaymentsRoutes);
 
 // ============================================
-// 2. CORS CONFIGURACIÓN COMPLETA
+// 2. CORS CONFIGURACIÓN
 // ============================================
 app.use(cors({
   origin: [
@@ -39,7 +39,20 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 console.log('📁 Sirviendo frontend desde:', path.join(__dirname, '../frontend'));
 
 // ============================================
-// 5. RUTAS DE LA API
+// 5. PASAR TOKEN DE PADDLE AL FRONTEND
+// ============================================
+app.use((req, res, next) => {
+    res.locals.paddleClientToken = process.env.PADDLE_CLIENT_TOKEN || '';
+    next();
+});
+
+// Ruta para obtener el token de Paddle
+app.get('/api/paddle-token', (req, res) => {
+    res.json({ token: process.env.PADDLE_CLIENT_TOKEN || '' });
+});
+
+// ============================================
+// 6. RUTAS DE LA API
 // ============================================
 const authRoutes = require('./routes/auth');
 const creditsRoutes = require('./routes/credits');
@@ -50,12 +63,12 @@ app.use('/api/credits', creditsRoutes);
 app.use('/api/resume', resumeRoutes);
 
 // ============================================
-// 6. RUTAS DE PAGOS (DESPUÉS DE express.json)
+// 7. RUTAS DE PAGOS (DESPUÉS DE express.json)
 // ============================================
-app.use('/api/payments', express.json(), paymentsRoutes);
+app.use('/api/payments', express.json(), paddlePaymentsRoutes);
 
 // ============================================
-// 7. RUTAS DEL FRONTEND
+// 8. RUTAS DEL FRONTEND
 // ============================================
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
@@ -70,20 +83,20 @@ app.get('/analyzer', (req, res) => {
 });
 
 // ============================================
-// 8. MANEJO DE ERRORES 404
+// 9. MANEJO DE ERRORES 404
 // ============================================
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
 // ============================================
-// 9. INICIAR SERVIDOR
+// 10. INICIAR SERVIDOR
 // ============================================
 app.listen(PORT, () => {
   console.log(`🚀 ResumeMate Server running on http://localhost:${PORT}`);
   console.log(`📧 Cuenta demo: demo@resumemate.com / demopass123`);
   console.log(`💰 Créditos: 10 (plan premium)`);
-  console.log(`💳 Stripe pagos: ${process.env.STRIPE_SECRET_KEY ? '✅ Configurado' : '❌ No configurado'}`);
+  console.log(`💳 Paddle: ${process.env.PADDLE_SECRET_KEY ? '✅ Configurado' : '❌ No configurado'}`);
 });
 
 module.exports = app;
