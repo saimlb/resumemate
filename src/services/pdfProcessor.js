@@ -26,14 +26,19 @@ class PDFProcessor {
       const page = doc.addPage([600, 800]);
       const { width, height } = page.getSize();
       
-      // Limpiar texto COMPLETAMENTE
+      // ============================================
+      // LIMPIEZA EXTREMA DEL TEXTO
+      // ============================================
       let cleanText = optimizedText
-        // Eliminar emojis (rango 0x1F000 - 0x1FFFF)
+        // Eliminar emojis
         .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
-        // Eliminar caracteres no ASCII
-        .replace(/[^\x00-\x7F]/g, ' ')
-        // Eliminar símbolos especiales
-        .replace(/[→←↑↓✓✔✗✘⚠️❌✅📄📊📝]/g, '')
+        // Eliminar caracteres no ASCII (acentos, ñ, etc.)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Eliminar tildes
+        .replace(/ñ/g, 'n')
+        .replace(/Ñ/g, 'N')
+        // Eliminar caracteres especiales
+        .replace(/[^a-zA-Z0-9 .,;:()\-!?]/g, ' ')
         // Reemplazar guiones
         .replace(/—/g, '-')
         .replace(/–/g, '-')
@@ -74,10 +79,10 @@ class PDFProcessor {
             size = 11;
           }
           
-          // Solo caracteres ASCII seguros
+          // Limitar longitud y limpiar
           const safeText = trimmedLine
             .substring(0, 70)
-            .replace(/[^a-zA-Z0-9 .,;:()\-]/g, '');
+            .replace(/[^a-zA-Z0-9 .,;:()\-!?]/g, '');
           
           if (safeText.length > 0) {
             try {
@@ -85,21 +90,10 @@ class PDFProcessor {
                 x: 50,
                 y: y,
                 size: size,
-                color: trimmedLine.includes('RECOMENDACIONES') || trimmedLine.includes('OPTIMIZADO') 
-                  ? rgb(0, 0.5, 0) 
-                  : rgb(0, 0, 0)
+                color: rgb(0, 0, 0)
               });
             } catch (drawError) {
-              // Intentar con un texto aún más simple
-              const simplerText = safeText.replace(/[^a-zA-Z0-9 ]/g, '');
-              if (simplerText.length > 0) {
-                page.drawText(simplerText, {
-                  x: 50,
-                  y: y,
-                  size: size,
-                  color: rgb(0, 0, 0)
-                });
-              }
+              console.error('Error al dibujar texto:', drawError);
             }
           }
           y -= 16;
@@ -125,6 +119,7 @@ class PDFProcessor {
       
       fs.writeFileSync(outputPath, pdfBytes);
       
+      console.log('✅ PDF optimizado creado:', outputPath);
       return outputPath;
     } catch (error) {
       console.error('Error al crear PDF optimizado:', error);
@@ -136,6 +131,7 @@ class PDFProcessor {
       const outputFilename = `optimized_${Date.now()}.pdf`;
       const outputPath = path.join(outputDir, outputFilename);
       fs.copyFileSync(originalPath, outputPath);
+      console.log('✅ Fallback: PDF original copiado:', outputPath);
       return outputPath;
     }
   }
