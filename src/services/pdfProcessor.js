@@ -41,35 +41,67 @@ class PDFProcessor {
         color: rgb(0.8, 0.8, 0.8)
       });
 
-      // Limpiar texto: eliminar emojis y caracteres especiales
-      const cleanText = optimizedText
-        .replace(/[^\x00-\x7F]/g, '') // Eliminar caracteres no ASCII
-        .replace(/[📄📊📝✅❌⚠️🔑💰🎯💡⚡🏆🔍]/g, ''); // Eliminar emojis comunes
+      // ============================================
+      // LIMPIEZA COMPLETA DEL TEXTO
+      // ============================================
+      // 1. Eliminar TODOS los emojis (rango Unicode de emojis)
+      // 2. Eliminar caracteres no ASCII
+      // 3. Eliminar caracteres especiales que pdf-lib no soporta
+      
+      let cleanText = optimizedText
+        // Eliminar emojis (rango 0x1F000 - 0x1FFFF)
+        .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+        // Eliminar otros caracteres no ASCII
+        .replace(/[^\x00-\x7F]/g, '')
+        // Eliminar símbolos comunes que causan problemas
+        .replace(/[→←↑↓✓✔✗✘⚠️❌✅]/g, '')
+        // Reemplazar guiones largos
+        .replace(/—/g, '-')
+        .replace(/–/g, '-')
+        // Reemplazar comillas curvas
+        .replace(/[""]/g, '"')
+        .replace(/['']/g, "'")
+        // Reemplazar espacios múltiples por uno solo
+        .replace(/\s+/g, ' ')
+        .trim();
 
+      // Dividir en líneas
       const lines = cleanText.split('\n');
       let y = height - 100;
       let lineCount = 0;
       
       for (const line of lines) {
         if (lineCount > 30) break;
-        if (line.trim()) {
+        const trimmedLine = line.trim();
+        if (trimmedLine) {
           let size = 10;
-          if (line.includes('===') || line.includes('---')) {
+          if (trimmedLine.includes('===') || trimmedLine.includes('---')) {
             size = 12;
-          } else if (line.includes('Puntuacion') || line.includes('RECOMENDACIONES')) {
+          } else if (trimmedLine.includes('Puntuacion') || trimmedLine.includes('RECOMENDACIONES')) {
             size = 11;
           }
           
           // Limitar longitud de línea a 70 caracteres
-          const textLine = line.substring(0, 70);
-          page.drawText(textLine, {
-            x: 50,
-            y: y,
-            size: size,
-            color: line.includes('RECOMENDACIONES') || line.includes('OPTIMIZADO') 
-              ? rgb(0, 0.5, 0) 
-              : rgb(0, 0, 0)
-          });
+          const textLine = trimmedLine.substring(0, 70);
+          try {
+            page.drawText(textLine, {
+              x: 50,
+              y: y,
+              size: size,
+              color: trimmedLine.includes('RECOMENDACIONES') || trimmedLine.includes('OPTIMIZADO') 
+                ? rgb(0, 0.5, 0) 
+                : rgb(0, 0, 0)
+            });
+          } catch (drawError) {
+            // Si falla, intentar con texto aún más limpio
+            const saferText = textLine.replace(/[^a-zA-Z0-9 .,;:()\-]/g, '');
+            page.drawText(saferText, {
+              x: 50,
+              y: y,
+              size: size,
+              color: rgb(0, 0, 0)
+            });
+          }
           y -= 16;
           lineCount++;
         } else {
