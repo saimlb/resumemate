@@ -92,6 +92,9 @@ router.post('/analyze', auth, creditsCheck, upload.single('resume'), async (req,
     // Limpiar archivo subido
     fs.unlinkSync(filePath);
 
+    // Extraer solo el nombre del archivo para la URL de descarga
+    const filename = path.basename(optimizedPath);
+
     res.json({
       success: true,
       analysisId: result.rows[0].id,
@@ -99,7 +102,7 @@ router.post('/analyze', auth, creditsCheck, upload.single('resume'), async (req,
       issues: analysis.issues,
       suggestions: analysis.suggestions,
       details: analysis.details,
-      optimizedPath: `/download/${req.file.filename}`,
+      optimizedPath: `/download/${filename}`,
       remainingCredits: remainingCredits,
       message: `✅ Análisis completado. Créditos restantes: ${remainingCredits}`
     });
@@ -117,9 +120,13 @@ router.post('/analyze', auth, creditsCheck, upload.single('resume'), async (req,
 // Descargar PDF optimizado
 router.get('/download/:filename', auth, (req, res) => {
   const filename = req.params.filename;
-  const filePath = path.join(__dirname, '..', '..', 'output', filename);
+  // La ruta correcta es: ../output/ (no ../src/output/)
+  const filePath = path.join(__dirname, '..', 'output', filename);
+  
+  console.log('📥 Buscando archivo para descargar:', filePath);
   
   if (!fs.existsSync(filePath)) {
+    console.log('❌ Archivo no encontrado:', filePath);
     return res.status(404).json({ error: 'Archivo no encontrado.' });
   }
 
