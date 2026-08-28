@@ -120,7 +120,7 @@ router.post('/analyze', auth, creditsCheck, upload.single('resume'), async (req,
 // Descargar PDF optimizado
 router.get('/download/:filename', auth, (req, res) => {
   const filename = req.params.filename;
-  // La ruta correcta es: ../output/ (no ../src/output/)
+  // Ruta correcta: ../output/ (está en la raíz del proyecto, no en src)
   const filePath = path.join(__dirname, '..', 'output', filename);
   
   console.log('📥 Buscando archivo para descargar:', filePath);
@@ -130,6 +130,7 @@ router.get('/download/:filename', auth, (req, res) => {
     return res.status(404).json({ error: 'Archivo no encontrado.' });
   }
 
+  console.log('✅ Archivo encontrado, enviando:', filePath);
   res.download(filePath, 'cv_optimizado_ats.pdf', (err) => {
     if (err) {
       console.error('Error al descargar:', err);
