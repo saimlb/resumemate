@@ -83,14 +83,29 @@ app.get('/analyzer', (req, res) => {
 });
 
 // ============================================
-// 9. MANEJO DE ERRORES 404
+// 9. PÁGINAS LEGALES
+// ============================================
+app.get('/terms.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/terms.html'));
+});
+
+app.get('/privacy.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/privacy.html'));
+});
+
+app.get('/refund.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/refund.html'));
+});
+
+// ============================================
+// 10. MANEJO DE ERRORES 404
 // ============================================
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
 // ============================================
-// 10. INICIAR SERVIDOR
+// 11. INICIAR SERVIDOR
 // ============================================
 app.listen(PORT, () => {
   console.log(`🚀 ResumeMate Server running on http://localhost:${PORT}`);
