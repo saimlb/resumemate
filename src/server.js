@@ -85,6 +85,19 @@ app.get('/analyzer', (req, res) => {
 // ============================================
 // 9. PÁGINAS LEGALES
 // ============================================
+app.get('/terms', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/terms.html'));
+});
+
+app.get('/privacy', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/privacy.html'));
+});
+
+app.get('/refund', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/refund.html'));
+});
+
+// Versiones con .html (por si acaso)
 app.get('/terms.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/terms.html'));
 });
