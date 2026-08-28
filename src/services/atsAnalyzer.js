@@ -7,15 +7,15 @@ class ATSAnalyzer {
 
     const wordCount = text.split(/\s+/).length;
     if (wordCount < 200) {
-      issues.push('📄 Tu CV es demasiado corto (menos de 200 palabras).');
-      suggestions.push('📝 Amplía tu experiencia laboral con más detalles y logros.');
+      issues.push('Tu CV es demasiado corto (menos de 200 palabras).');
+      suggestions.push('Amplia tu experiencia laboral con mas detalles y logros.');
       score -= 10;
     } else if (wordCount > 800) {
-      issues.push('📄 Tu CV es muy extenso.');
-      suggestions.push('✂️ Reduce tu CV a 1-2 páginas.');
+      issues.push('Tu CV es muy extenso.');
+      suggestions.push('Reduce tu CV a 1-2 paginas.');
       score -= 5;
     } else {
-      suggestions.push('✅ La extensión de tu CV es adecuada.');
+      suggestions.push('La extension de tu CV es adecuada.');
       score += 5;
     }
 
@@ -23,8 +23,8 @@ class ATSAnalyzer {
     const hasExperience = sections.some(s => text.toLowerCase().includes(s));
     
     if (!hasExperience) {
-      issues.push('⚠️ No se detecta una sección clara de "Experiencia Laboral".');
-      suggestions.push('📋 Añade una sección específica de "Experiencia Laboral".');
+      issues.push('No se detecta una seccion clara de "Experiencia Laboral".');
+      suggestions.push('Anade una seccion especifica de "Experiencia Laboral".');
       score -= 15;
     } else {
       score += 5;
@@ -34,11 +34,11 @@ class ATSAnalyzer {
     const foundHardSkills = hardSkills.filter(skill => text.toLowerCase().includes(skill));
     
     if (foundHardSkills.length < 3) {
-      issues.push('🔧 Pocas habilidades técnicas identificadas.');
-      suggestions.push('💻 Incluye más habilidades técnicas específicas.');
+      issues.push('Pocas habilidades tecnicas identificadas.');
+      suggestions.push('Incluye mas habilidades tecnicas especificas.');
       score -= 10;
     } else {
-      suggestions.push(`🛠️ Buen número de hard skills detectadas (${foundHardSkills.length}).`);
+      suggestions.push(`Buen numero de hard skills detectadas (${foundHardSkills.length}).`);
       score += 5;
     }
 
@@ -46,20 +46,20 @@ class ATSAnalyzer {
     const foundSoftSkills = softSkills.filter(skill => text.toLowerCase().includes(skill));
     
     if (foundSoftSkills.length < 2) {
-      issues.push('🧠 Pocas habilidades blandas mencionadas.');
-      suggestions.push('🤝 Añade habilidades blandas clave.');
+      issues.push('Pocas habilidades blandas mencionadas.');
+      suggestions.push('Anade habilidades blandas clave.');
       score -= 8;
     } else {
-      suggestions.push(`⭐ Buen nivel de soft skills (${foundSoftSkills.length} detectadas).`);
+      suggestions.push(`Buen nivel de soft skills (${foundSoftSkills.length} detectadas).`);
     }
 
     const hasNumbers = /\d+%|\d+\s*€|\d+\s*dólares|\d+\s*millones|\d+\s*miembros|\d+\s*clientes/.test(text);
     if (!hasNumbers) {
-      issues.push('📊 Faltan logros cuantificables.');
-      suggestions.push('🎯 Cuantifica tus logros con números y porcentajes.');
+      issues.push('Faltan logros cuantificables.');
+      suggestions.push('Cuantifica tus logros con numeros y porcentajes.');
       score -= 12;
     } else {
-      suggestions.push('📈 Buen uso de métricas y números.');
+      suggestions.push('Buen uso de metricas y numeros.');
       score += 8;
     }
 
@@ -67,13 +67,13 @@ class ATSAnalyzer {
     const hasPhone = /\+\d{1,3}\s?\d{9,11}|\d{9,11}/.test(text);
     
     if (!hasEmail) {
-      issues.push('📧 No se detecta email de contacto.');
-      suggestions.push('📬 Incluye tu email en la cabecera del CV.');
+      issues.push('No se detecta email de contacto.');
+      suggestions.push('Incluye tu email en la cabecera del CV.');
       score -= 5;
     }
     if (!hasPhone) {
-      issues.push('📱 No se detecta número de teléfono.');
-      suggestions.push('📞 Incluye tu teléfono con prefijo internacional.');
+      issues.push('No se detecta numero de telefono.');
+      suggestions.push('Incluye tu telefono con prefijo internacional.');
       score -= 5;
     }
 
@@ -81,11 +81,11 @@ class ATSAnalyzer {
     const foundKeywords = keywords.filter(kw => text.toLowerCase().includes(kw));
     
     if (foundKeywords.length < 5) {
-      issues.push('🔑 Pocas palabras clave de acción.');
-      suggestions.push('⚡ Usa verbos de acción como "Implementé", "Optimicé", "Lideré".');
+      issues.push('Pocas palabras clave de accion.');
+      suggestions.push('Usa verbos de accion como "Implemente", "Optimice", "Lidere".');
       score -= 8;
     } else {
-      suggestions.push(`💪 Buen uso de verbos de acción (${foundKeywords.length} detectados).`);
+      suggestions.push(`Buen uso de verbos de accion (${foundKeywords.length} detectados).`);
       score += 5;
     }
 
@@ -111,19 +111,24 @@ class ATSAnalyzer {
   }
 
   generateOptimizedText(originalText, suggestions) {
-    let optimized = `=== CV OPTIMIZADO - RECOMENDACIONES ATS ===\n\n`;
-    optimized += `📊 Puntuación ATS mejorada\n`;
-    optimized += `📝 Sigue estas recomendaciones para optimizar tu CV:\n\n`;
+    // Generar texto sin emojis
+    let optimized = '=== CV OPTIMIZADO - RECOMENDACIONES ATS ===\n\n';
+    optimized += 'Puntuacion ATS mejorada\n';
+    optimized += 'Sigue estas recomendaciones para optimizar tu CV:\n\n';
     
     suggestions.forEach((s, i) => {
-      optimized += `${i + 1}. ${s}\n`;
+      // Eliminar cualquier emoji residual
+      const cleanSuggestion = s
+        .replace(/[📄📊📝✅❌⚠️🔑💰🎯💡⚡🏆🔍🧠🤝⭐📋📈📬📞📱✂️🔧💻🛠️💪]/g, '')
+        .trim();
+      optimized += `${i + 1}. ${cleanSuggestion}\n`;
     });
     
-    optimized += `\n\n--- TU CV ORIGINAL CON MEJORAS ---\n\n`;
+    optimized += '\n\n--- TU CV ORIGINAL CON MEJORAS ---\n\n';
     optimized += originalText;
     
     return optimized;
   }
 }
 
-module.exports = new ATSAnalyzer(); 
+module.exports = new ATSAnalyzer();
