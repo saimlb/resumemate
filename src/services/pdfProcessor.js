@@ -16,9 +16,11 @@ class PDFProcessor {
 
   async createOptimizedPDF(originalPath, optimizedText) {
     try {
+      // Asegurar que la carpeta output existe
       const outputDir = path.join(__dirname, '..', '..', 'output');
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
+        console.log('📁 Carpeta output creada:', outputDir);
       }
 
       const { PDFDocument, rgb } = require('pdf-lib');
@@ -26,26 +28,16 @@ class PDFProcessor {
       const page = doc.addPage([600, 800]);
       const { width, height } = page.getSize();
       
-      // ============================================
-      // LIMPIEZA EXTREMA DEL TEXTO
-      // ============================================
+      // Limpiar texto
       let cleanText = optimizedText
-        // Eliminar emojis
         .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
-        // Eliminar caracteres no ASCII (acentos, ñ, etc.)
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Eliminar tildes
+        .replace(/[\u0300-\u036f]/g, '')
         .replace(/ñ/g, 'n')
         .replace(/Ñ/g, 'N')
-        // Eliminar caracteres especiales
         .replace(/[^a-zA-Z0-9 .,;:()\-!?]/g, ' ')
-        // Reemplazar guiones
         .replace(/—/g, '-')
         .replace(/–/g, '-')
-        // Reemplazar comillas
-        .replace(/[""]/g, '"')
-        .replace(/['']/g, "'")
-        // Eliminar espacios múltiples
         .replace(/\s+/g, ' ')
         .trim();
 
@@ -79,10 +71,7 @@ class PDFProcessor {
             size = 11;
           }
           
-          // Limitar longitud y limpiar
-          const safeText = trimmedLine
-            .substring(0, 70)
-            .replace(/[^a-zA-Z0-9 .,;:()\-!?]/g, '');
+          const safeText = trimmedLine.substring(0, 70).replace(/[^a-zA-Z0-9 .,;:()\-!?]/g, '');
           
           if (safeText.length > 0) {
             try {
@@ -104,7 +93,6 @@ class PDFProcessor {
         }
       }
 
-      // PIE DE PAGINA
       page.drawText('Generado por ResumeMate - Optimizador ATS', {
         x: 50,
         y: 30,
@@ -118,21 +106,32 @@ class PDFProcessor {
       const outputPath = path.join(outputDir, outputFilename);
       
       fs.writeFileSync(outputPath, pdfBytes);
+      console.log('✅ PDF guardado en:', outputPath);
       
-      console.log('✅ PDF optimizado creado:', outputPath);
-      return outputPath;
-    } catch (error) {
-      console.error('Error al crear PDF optimizado:', error);
-      // Fallback: copiar el PDF original
-      const outputDir = path.join(__dirname, '..', '..', 'output');
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
+      // Verificar que el archivo existe
+      if (fs.existsSync(outputPath)) {
+        console.log('✅ Archivo verificado:', outputPath);
+        return outputPath;
+      } else {
+        throw new Error('El archivo no se guardó correctamente');
       }
-      const outputFilename = `optimized_${Date.now()}.pdf`;
-      const outputPath = path.join(outputDir, outputFilename);
-      fs.copyFileSync(originalPath, outputPath);
-      console.log('✅ Fallback: PDF original copiado:', outputPath);
-      return outputPath;
+    } catch (error) {
+      console.error('❌ Error al crear PDF optimizado:', error);
+      // Fallback: copiar el PDF original
+      try {
+        const outputDir = path.join(__dirname, '..', '..', 'output');
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        const outputFilename = `optimized_${Date.now()}.pdf`;
+        const outputPath = path.join(outputDir, outputFilename);
+        fs.copyFileSync(originalPath, outputPath);
+        console.log('✅ Fallback: PDF original copiado a:', outputPath);
+        return outputPath;
+      } catch (fallbackError) {
+        console.error('❌ Fallback también falló:', fallbackError);
+        throw error;
+      }
     }
   }
 }
