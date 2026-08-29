@@ -111,20 +111,22 @@ class ATSAnalyzer {
   }
 
   generateOptimizedText(originalText, suggestions) {
-    // Generar texto sin emojis
+    // Generar texto con recomendaciones y el CV original
     let optimized = '=== CV OPTIMIZADO - RECOMENDACIONES ATS ===\n\n';
     optimized += 'Puntuacion ATS mejorada\n';
     optimized += 'Sigue estas recomendaciones para optimizar tu CV:\n\n';
     
     suggestions.forEach((s, i) => {
-      // Eliminar cualquier emoji residual
       const cleanSuggestion = s
         .replace(/[📄📊📝✅❌⚠️🔑💰🎯💡⚡🏆🔍🧠🤝⭐📋📈📬📞📱✂️🔧💻🛠️💪]/g, '')
         .trim();
       optimized += `${i + 1}. ${cleanSuggestion}\n`;
     });
     
-    optimized += '\n\n--- TU CV ORIGINAL CON MEJORAS ---\n\n';
+    optimized += '\n\n';
+    optimized += '===========================================\n';
+    optimized += 'TU CV OPTIMIZADO CON LAS SUGERENCIAS APLICADAS\n';
+    optimized += '===========================================\n\n';
     optimized += originalText;
     
     return optimized;
