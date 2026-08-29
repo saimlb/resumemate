@@ -117,7 +117,9 @@ router.post('/analyze', auth, creditsCheck, upload.single('resume'), async (req,
   }
 });
 
-// Descargar PDF optimizado
+// ============================================
+// RUTA DE DESCARGA CORREGIDA
+// ============================================
 router.get('/download/:filename', auth, (req, res) => {
   const filename = req.params.filename;
   // Ruta correcta: ../output/ (está en la raíz del proyecto, no en src)
