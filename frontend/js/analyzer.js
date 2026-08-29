@@ -84,6 +84,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         await analyzeFile();
     });
 
+    // ============================================
+    // BOTÓN DE DESCARGA - CORREGIDO
+    // ============================================
     downloadBtn.addEventListener('click', async () => {
         if (!analysisResult || !analysisResult.optimizedPath) {
             showToast('No hay resultados para descargar.', 'error');
@@ -92,7 +95,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         try {
             const token = getToken();
-            const downloadUrl = `${BASE_URL}${analysisResult.optimizedPath}`;
+            // Usar la ruta relativa directamente (el backend la sirve)
+            const downloadUrl = analysisResult.optimizedPath;
             console.log('📥 Descargando desde:', downloadUrl);
             
             const response = await fetch(downloadUrl, {
