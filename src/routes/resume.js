@@ -122,17 +122,30 @@ router.post('/analyze', auth, creditsCheck, upload.single('resume'), async (req,
 // ============================================
 router.get('/download/:filename', auth, (req, res) => {
   const filename = req.params.filename;
-  // Ruta correcta: ../output/ (está en la raíz del proyecto, no en src)
-  const filePath = path.join(__dirname, '..', 'output', filename);
   
-  console.log('📥 Buscando archivo para descargar:', filePath);
+  // Intentar con diferentes rutas
+  const possiblePaths = [
+    path.join(__dirname, '..', 'output', filename),
+    path.join(__dirname, 'output', filename),
+    `/opt/render/project/src/output/${filename}`,
+    `/opt/render/project/output/${filename}`
+  ];
   
-  if (!fs.existsSync(filePath)) {
-    console.log('❌ Archivo no encontrado:', filePath);
+  let filePath = null;
+  
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      filePath = p;
+      break;
+    }
+  }
+  
+  if (!filePath) {
+    console.log('❌ Archivo no encontrado en ninguna de las rutas:', possiblePaths);
     return res.status(404).json({ error: 'Archivo no encontrado.' });
   }
 
-  console.log('✅ Archivo encontrado, enviando:', filePath);
+  console.log('✅ Archivo encontrado en:', filePath);
   res.download(filePath, 'cv_optimizado_ats.pdf', (err) => {
     if (err) {
       console.error('Error al descargar:', err);
