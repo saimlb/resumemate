@@ -111,22 +111,26 @@ class ATSAnalyzer {
   }
 
   generateOptimizedText(originalText, suggestions) {
-    // Generar texto con recomendaciones y el CV original
-    let optimized = '=== CV OPTIMIZADO - RECOMENDACIONES ATS ===\n\n';
-    optimized += 'Puntuacion ATS mejorada\n';
-    optimized += 'Sigue estas recomendaciones para optimizar tu CV:\n\n';
+    // Limpiar sugerencias (eliminar emojis)
+    const cleanSuggestions = suggestions.map(s => 
+        s.replace(/[📄📊📝✅❌⚠️🔑💰🎯💡⚡🏆🔍🧠🤝⭐📋📈📬📞📱✂️🔧💻🛠️💪]/g, '').trim()
+    );
     
-    suggestions.forEach((s, i) => {
-      const cleanSuggestion = s
-        .replace(/[📄📊📝✅❌⚠️🔑💰🎯💡⚡🏆🔍🧠🤝⭐📋📈📬📞📱✂️🔧💻🛠️💪]/g, '')
-        .trim();
-      optimized += `${i + 1}. ${cleanSuggestion}\n`;
+    // Construir el texto optimizado
+    let optimized = '========================================\n';
+    optimized += '   CV OPTIMIZADO - RESUMEN ATS\n';
+    optimized += '========================================\n\n';
+    
+    optimized += 'RECOMENDACIONES PARA MEJORAR TU CV:\n';
+    optimized += '----------------------------------------\n';
+    cleanSuggestions.forEach((s, i) => {
+        optimized += `${i + 1}. ${s}\n`;
     });
     
     optimized += '\n\n';
-    optimized += '===========================================\n';
-    optimized += 'TU CV OPTIMIZADO CON LAS SUGERENCIAS APLICADAS\n';
-    optimized += '===========================================\n\n';
+    optimized += '========================================\n';
+    optimized += '   TU CV ORIGINAL\n';
+    optimized += '========================================\n\n';
     optimized += originalText;
     
     return optimized;
