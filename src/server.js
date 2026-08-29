@@ -38,6 +38,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../frontend')));
 console.log('📁 Sirviendo frontend desde:', path.join(__dirname, '../frontend'));
 
+// === SERVIR ARCHIVOS DE OUTPUT (PARA DESCARGA) ===
+app.use('/download', express.static(path.join(__dirname, '../output')));
+console.log('📁 Sirviendo archivos de output desde:', path.join(__dirname, '../output'));
+
 // ============================================
 // 5. PASAR TOKEN DE PADDLE AL FRONTEND
 // ============================================
