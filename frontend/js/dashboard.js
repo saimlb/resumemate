@@ -33,11 +33,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Botones de compra con Paddle
+    // ============================================
+    // BOTONES DE COMPRA - DESHABILITADOS TEMPORALMENTE
+    // ============================================
     document.querySelectorAll('.purchase-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const plan = btn.closest('.purchase-card').dataset.plan;
-            await handlePurchase(plan);
+        btn.addEventListener('click', () => {
+            showToast('⏳ Los pagos estarán disponibles próximamente.', 'info');
         });
     });
 
@@ -132,45 +133,16 @@ async function loadStats() {
 }
 
 // ============================================
-// FUNCIONES DE PAGO CON PADDLE
+// FUNCIONES DE PAGO CON PADDLE - DESHABILITADAS
 // ============================================
 
-async function handlePurchase(plan) {
-    try {
-        const planNames = {
-            'pro': 'Plan Pro (20 créditos por 19€)',
-            'premium': 'Plan Premium (100 créditos por 59€)'
-        };
+// function handlePurchase(plan) {
+//     showToast('⏳ Los pagos estarán disponibles próximamente.', 'info');
+// }
 
-        showToast(`🔄 Procesando pago con Paddle para ${planNames[plan]}...`, 'info');
-        
-        // Llamar al backend para crear el checkout de Paddle
-        const result = await apiCall('/payments/create-checkout', {
-            method: 'POST',
-            body: JSON.stringify({ plan })
-        });
-        
-        console.log('✅ Respuesta del backend:', result);
-        
-        if (result && result.url) {
-            // Redirigir al checkout de Paddle
-            showToast('🔀 Redirigiendo a Paddle...', 'info');
-            setTimeout(() => {
-                window.location.href = result.url;
-            }, 1000);
-        } else {
-            // Fallback: si el backend devuelve créditos directamente
-            showToast('✅ Créditos añadidos correctamente', 'success');
-            const user = await getUserProfile();
-            document.getElementById('creditsCount').textContent = user.credits;
-            document.getElementById('buyCreditsModal').style.display = 'none';
-            await loadStats();
-        }
-    } catch (error) {
-        console.error('❌ Error en handlePurchase:', error);
-        showToast(error.message || 'Error al procesar la compra.', 'error');
-    }
-}
+// async function purchaseCreditsWithPaddle(plan) {
+//     showToast('⏳ Los pagos estarán disponibles próximamente.', 'info');
+// }
 
 // Función para verificar el estado del pago al volver
 function checkPaymentStatus() {
