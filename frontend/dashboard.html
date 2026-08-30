@@ -99,13 +99,13 @@
         </main>
     </div>
 
-    <!-- Modal de compra de créditos con Paddle -->
+    <!-- Modal de compra de créditos -->
     <div id="buyCreditsModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>💰 Comprar Créditos</h2>
             <p style="color: #2563eb; background: #e0f2fe; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
-                🔒 Pagos seguros procesados por Paddle
+                💳 Pagos seguros a través de PayPal
             </p>
             <div class="purchase-options">
                 <!-- Plan Pro -->
@@ -118,7 +118,7 @@
                         <li>✅ Sugerencias personalizadas</li>
                         <li>✅ Descarga de CV optimizado</li>
                     </ul>
-                    <button class="btn btn-primary btn-block purchase-btn">Comprar con Paddle</button>
+                    <button class="btn btn-primary btn-block purchase-btn">Pagar con PayPal</button>
                 </div>
 
                 <!-- Plan Premium -->
@@ -132,11 +132,11 @@
                         <li>✅ Descarga de CV optimizado</li>
                         <li>✅ Prioridad en procesamiento</li>
                     </ul>
-                    <button class="btn btn-primary btn-block purchase-btn">Comprar con Paddle</button>
+                    <button class="btn btn-primary btn-block purchase-btn">Pagar con PayPal</button>
                 </div>
             </div>
             <p style="text-align: center; font-size: 0.9rem; color: #666; margin-top: 15px;">
-                🔒 Pagos seguros procesados por Paddle
+                💳 Próximamente: pagos con tarjeta de crédito
             </p>
         </div>
     </div>
@@ -144,42 +144,6 @@
     <!-- Toast de notificaciones -->
     <div id="toast" class="toast"></div>
 
-    <!-- Scripts -->
-    <!-- Paddle SDK -->
-    <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
-    <script>
-        // Función para obtener el token de Paddle desde el backend
-        async function getPaddleToken() {
-            try {
-                const response = await fetch('/api/paddle-token');
-                const data = await response.json();
-                return data.token;
-            } catch (error) {
-                console.error('❌ Error al obtener token de Paddle:', error);
-                return null;
-            }
-        }
-
-        // Inicializar Paddle cuando la página cargue
-        (async function initPaddle() {
-            const token = await getPaddleToken();
-            window.PADDLE_CLIENT_TOKEN = token;
-            
-            if (token && token !== '{{PADDLE_CLIENT_TOKEN}}') {
-                try {
-                    Paddle.Environment.set('sandbox');
-                    Paddle.Initialize({
-                        token: token
-                    });
-                    console.log('✅ Paddle inicializado correctamente');
-                } catch (error) {
-                    console.error('❌ Error al inicializar Paddle:', error);
-                }
-            } else {
-                console.warn('⚠️ Token de Paddle no disponible');
-            }
-        })();
-    </script>
     <script src="/js/auth.js"></script>
     <script src="/js/dashboard.js"></script>
 </body>
